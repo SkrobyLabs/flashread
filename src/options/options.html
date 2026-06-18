@@ -1,0 +1,31 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>FlashRead Options</title>
+    <style>
+      body { font-family: -apple-system, Segoe UI, Roboto, sans-serif; max-width: 420px; margin: 40px auto; color: #15171c; }
+      h1 { font-size: 20px; }
+      .row { display: flex; align-items: center; gap: 12px; margin: 18px 0; }
+      input[type="range"] { flex: 1; }
+      .val { min-width: 84px; font-variant-numeric: tabular-nums; }
+      .hint { color: #6b7280; font-size: 13px; line-height: 1.5; }
+      code { background: #f0f1f4; padding: 1px 5px; border-radius: 4px; }
+    </style>
+  </head>
+  <body>
+    <h1>⚡ FlashRead</h1>
+    <div class="row">
+      <label for="wpm">Default speed</label>
+      <input type="range" id="wpm" min="100" max="1000" step="25" />
+      <span class="val" id="wpmVal"></span>
+    </div>
+    <p class="hint">
+      Select text on any page, then right-click → <em>Speed-read selection</em>,
+      click the floating ⚡ icon, or press the shortcut (default
+      <code>Ctrl/Cmd+Shift+Y</code>; change it at
+      <code>chrome://extensions/shortcuts</code>).
+    </p>
+    <script src="options.js"></script>
+  </body>
+</html>
