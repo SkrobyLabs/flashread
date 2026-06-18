@@ -7,8 +7,10 @@ your eyes stay still and you read faster.
 
 ## Features
 
-- **Three ways to launch** any text selection:
-  - Right-click → **Speed-read selection**
+- **Ways to launch:**
+  - Click the **toolbar icon** for a popup menu: *Speed-read selection*,
+    *Speed-read clipboard*, *Settings*
+  - Right-click selected text → **Speed-read selection**
   - The floating **⚡ icon** that appears next to a selection
   - Keyboard shortcut — default `Ctrl/Cmd+Shift+Y` (change at `chrome://extensions/shortcuts`)
 - **Overlay player** injected into the page in a Shadow DOM (style-isolated):
@@ -23,8 +25,11 @@ your eyes stay still and you read faster.
   selection, so FlashRead can't read it directly. Fallback: if no selectable text
   is found it reads the **clipboard** — in Docs, select → copy (Ctrl/Cmd+C) →
   trigger FlashRead. (No in-page highlight in this mode — there's no DOM range.)
-- Keyboard controls while open: `Space` play/pause, `←/→` jump 15 words, `↑/↓` speed, `Esc` close.
-- Default WPM saved via `chrome.storage.sync` (also editable on the options page).
+- Keyboard controls while open: `Space` play/pause, `←/→` jump (configurable), `↑/↓` speed, `Esc` close.
+- **Settings page** with a **live preview**: theme (dark/light), focus-point color
+  (picker + presets), default speed, jump distance, and editable test text. The
+  preview is the real player running embedded, so changes show instantly. All
+  settings save to `chrome.storage.sync` and the popup follows the chosen theme.
 
 ## Install (unpacked)
 
@@ -37,10 +42,11 @@ your eyes stay still and you read faster.
 ```
 manifest.json            MV3 manifest, permissions, shortcut, content-script registration
 src/background.js        service worker: context menu + command → message the tab
+src/popup/               toolbar popup menu (selection / clipboard / settings)
 src/content.js           selection capture, range→word tokenizer, floating icon, in-page highlight
 src/player/player.js     RSVP engine + Shadow-DOM overlay UI
-src/player/player.css    overlay styles (injected into the shadow root)
-src/options/             default-WPM settings page
+src/player/player.css    overlay styles (theme CSS variables; injected into the shadow root)
+src/options/             styled settings page + live embedded preview
 icons/                   generated app icons (regenerate with `python3 icons/mkicon.py`)
 ```
 
@@ -55,7 +61,8 @@ sentence/clause punctuation and long words.
 
 ## Permissions
 
-`activeTab`, `storage`, `contextMenus`, `clipboardRead` (canvas-app fallback only).
+`activeTab`, `storage`, `contextMenus`, `clipboardRead` (clipboard reading),
+`scripting` (popup injects the content script into tabs opened before install).
 The content script matches `<all_urls>`
 because the floating selection icon needs to observe selections on every page;
 no remote hosts are contacted and nothing is sent off-device.

@@ -3,7 +3,7 @@
   "name": "FlashRead — RSVP Speed Reader",
   "version": "0.1.0",
   "description": "Select text on any page and speed-read it with RSVP (one word at a time, focus-letter highlighting).",
-  "permissions": ["contextMenus", "storage", "activeTab", "clipboardRead"],
+  "permissions": ["contextMenus", "storage", "activeTab", "clipboardRead", "scripting"],
   "background": {
     "service_worker": "src/background.js"
   },
@@ -31,7 +31,8 @@
     }
   },
   "action": {
-    "default_title": "FlashRead — select text, then right-click or press the shortcut",
+    "default_title": "FlashRead",
+    "default_popup": "src/popup/popup.html",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",

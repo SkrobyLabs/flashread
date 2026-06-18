@@ -7,8 +7,33 @@
   const MIN_WPM = 100;
   const MAX_WPM = 1000;
   const WPM_STEP = 25;
-  const SKIP = 15; // words to jump on back/forward
+  const SKIP = 15; // default words to jump on back/forward
   const RAMP_MS = 2000; // ease-in: half-speed → full speed over this window
+
+  const THEMES = {
+    dark: {
+      "--fr-overlay": "rgba(0,0,0,.55)",
+      "--fr-bg": "#15171c",
+      "--fr-fg": "#e7e9ee",
+      "--fr-border": "#2a2e37",
+      "--fr-track": "#2a2e37",
+      "--fr-btn": "#232730",
+      "--fr-btn-hover": "#2e333e",
+      "--fr-muted": "#aab0bd",
+      "--fr-muted2": "#6b7280",
+    },
+    light: {
+      "--fr-overlay": "rgba(20,23,28,.35)",
+      "--fr-bg": "#ffffff",
+      "--fr-fg": "#15171c",
+      "--fr-border": "#e3e5ea",
+      "--fr-track": "#e6e8ee",
+      "--fr-btn": "#eef0f4",
+      "--fr-btn-hover": "#e3e6ec",
+      "--fr-muted": "#5b6473",
+      "--fr-muted2": "#9aa1ad",
+    },
+  };
 
   // Optimal Recognition Point: index of the pivot (red) letter by word length.
   function orpIndex(word) {
@@ -21,10 +46,16 @@
   }
 
   class RSVPPlayer {
-    // opts: { words: string[], wpm?, cssUrl, onWord?(i), onClose?() }
+    // opts: { words, wpm?, skip?, theme?, focusColor?, cssUrl, onWord?, onClose?,
+    //         embedded?, container? }
     constructor(opts) {
       this.words = opts.words || [];
       this.wpm = clampWpm(opts.wpm || DEFAULT_WPM);
+      this.skip = opts.skip || SKIP;
+      this.theme = opts.theme || "dark";
+      this.focusColor = opts.focusColor || "#e74c3c";
+      this.embedded = !!opts.embedded;
+      this.container = opts.container || null;
       this.cssUrl = opts.cssUrl;
       this.onWord = opts.onWord || (() => {});
       this.onClose = opts.onClose || (() => {});
@@ -37,10 +68,7 @@
 
     async mount() {
       this.host = document.createElement("div");
-      this.host.id = "flashread-host";
-      // High z-index host; actual UI lives in a shadow root for style isolation.
-      this.host.style.cssText =
-        "all:initial;position:fixed;inset:0;z-index:2147483647;";
+      // Actual UI lives in a shadow root for style isolation.
       this.shadow = this.host.attachShadow({ mode: "open" });
 
       const style = document.createElement("style");
@@ -48,19 +76,50 @@
       this.shadow.appendChild(style);
 
       this.shadow.appendChild(this._buildUI());
-      document.documentElement.appendChild(this.host);
+      this._applyTheme();
 
-      document.addEventListener("keydown", this._onKey, true);
+      if (this.embedded && this.container) {
+        this.host.style.cssText = "all:initial;display:block;";
+        this.container.appendChild(this.host);
+      } else {
+        this.host.id = "flashread-host";
+        this.host.style.cssText =
+          "all:initial;position:fixed;inset:0;z-index:2147483647;";
+        document.documentElement.appendChild(this.host);
+        document.addEventListener("keydown", this._onKey, true);
+      }
+
       this._render();
       this._updateWpm();
       // Start paused on the first word; the user presses play when ready.
     }
 
+    _applyTheme() {
+      const palette = THEMES[this.theme] || THEMES.dark;
+      for (const [k, v] of Object.entries(palette)) this.root.style.setProperty(k, v);
+      this.root.style.setProperty("--fr-accent", this.focusColor);
+    }
+
+    // Live updates for the options-page preview.
+    setTheme(theme, focusColor) {
+      if (theme) this.theme = theme;
+      if (focusColor) this.focusColor = focusColor;
+      if (this.root) this._applyTheme();
+    }
+    setSkip(n) {
+      this.skip = Math.max(1, Math.round(n));
+      if (this.btnBack) this.btnBack.title = `Back ${this.skip} words (←)`;
+      if (this.btnFwd) this.btnFwd.title = `Forward ${this.skip} words (→)`;
+    }
+
     _buildUI() {
-      const root = el("div", "fr-backdrop");
-      root.addEventListener("mousedown", (e) => {
-        if (e.target === root) this.destroy(); // click outside the card closes
-      });
+      const root = el("div", this.embedded ? "fr-embed" : "fr-backdrop");
+      this.root = root;
+      if (!this.embedded) {
+        root.addEventListener("mousedown", (e) => {
+          if (e.target === root) this.destroy(); // click outside the card closes
+        });
+      }
 
       const card = el("div", "fr-card");
 
@@ -88,19 +147,22 @@
 
       // Controls
       const ctrl = el("div", "fr-controls");
-      this.btnBack = btn("⏮", "Back 15 words (←)", () => this.step(-SKIP));
+      this.btnBack = btn("⏮", `Back ${this.skip} words (←)`, () => this.step(-this.skip));
       this.btnPlay = btn("▶", "Play / Pause (Space)", () => this.toggle());
-      this.btnFwd = btn("⏭", "Forward 15 words (→)", () => this.step(SKIP));
+      this.btnFwd = btn("⏭", `Forward ${this.skip} words (→)`, () => this.step(this.skip));
       ctrl.append(this.btnBack, this.btnPlay, this.btnFwd);
 
-      const wpmBox = el("div", "fr-wpm");
-      const minus = btn("−", "Slower (↓)", () => this.setWpm(this.wpm - WPM_STEP));
-      this.wpmLabel = el("span", "fr-wpm-label");
-      const plus = btn("+", "Faster (↑)", () => this.setWpm(this.wpm + WPM_STEP));
-      wpmBox.append(minus, this.wpmLabel, plus);
-      ctrl.appendChild(wpmBox);
-
-      ctrl.appendChild(btn("✕", "Close (Esc)", () => this.destroy()));
+      // The WPM stepper and close button only belong on the in-page overlay;
+      // the options-page preview is driven by the settings form instead.
+      if (!this.embedded) {
+        const wpmBox = el("div", "fr-wpm");
+        const minus = btn("−", "Slower (↓)", () => this.setWpm(this.wpm - WPM_STEP));
+        this.wpmLabel = el("span", "fr-wpm-label");
+        const plus = btn("+", "Faster (↑)", () => this.setWpm(this.wpm + WPM_STEP));
+        wpmBox.append(minus, this.wpmLabel, plus);
+        ctrl.appendChild(wpmBox);
+        ctrl.appendChild(btn("✕", "Close (Esc)", () => this.destroy()));
+      }
       card.appendChild(ctrl);
 
       this.counter = el("div", "fr-counter");
@@ -189,14 +251,14 @@
     }
 
     _updateWpm() {
-      this.wpmLabel.textContent = `${this.wpm} wpm`;
+      if (this.wpmLabel) this.wpmLabel.textContent = `${this.wpm} wpm`;
     }
 
     _onKey(e) {
       switch (e.key) {
         case " ": e.preventDefault(); this.toggle(); break;
-        case "ArrowLeft": e.preventDefault(); this.step(-SKIP); break;
-        case "ArrowRight": e.preventDefault(); this.step(SKIP); break;
+        case "ArrowLeft": e.preventDefault(); this.step(-this.skip); break;
+        case "ArrowRight": e.preventDefault(); this.step(this.skip); break;
         case "ArrowUp": e.preventDefault(); this.setWpm(this.wpm + WPM_STEP); break;
         case "ArrowDown": e.preventDefault(); this.setWpm(this.wpm - WPM_STEP); break;
         case "Escape": e.preventDefault(); this.destroy(); break;

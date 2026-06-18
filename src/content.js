@@ -80,11 +80,11 @@
   }
 
   // ---- Open the player from the current selection ----
-  async function openFromSelection(fallbackText) {
+  async function openFromSelection(fallbackText, ignoreSelection) {
     const sel = window.getSelection();
     let words, toks;
 
-    if (sel && sel.rangeCount && !sel.isCollapsed) {
+    if (!ignoreSelection && sel && sel.rangeCount && !sel.isCollapsed) {
       const range = sel.getRangeAt(0);
       ({ words, toks } = tokenizeRange(range));
     }
@@ -115,11 +115,16 @@
     hideIcon();
     if (player) player.destroy();
 
-    const { wpm = 350 } = await chrome.storage.sync.get("wpm").catch(() => ({}));
+    const cfg = await chrome.storage.sync
+      .get(["wpm", "theme", "focusColor", "skip"])
+      .catch(() => ({}));
     const { RSVPPlayer } = window.__flashread;
     player = new RSVPPlayer({
       words,
-      wpm,
+      wpm: cfg.wpm ?? 350,
+      theme: cfg.theme || "dark",
+      focusColor: cfg.focusColor || "#e74c3c",
+      skip: cfg.skip || 15,
       cssUrl: chrome.runtime.getURL("src/player/player.css"),
       onWord: (i) => highlightToken(i),
       // Keep the last highlight in place after closing so the user sees where they stopped.
@@ -214,6 +219,6 @@
 
   // ---- Messages from the service worker (shortcut / context menu) ----
   chrome.runtime.onMessage.addListener((msg) => {
-    if (msg?.type === "open-rsvp") openFromSelection(msg.text);
+    if (msg?.type === "open-rsvp") openFromSelection(msg.text, msg.ignoreSelection);
   });
 })();

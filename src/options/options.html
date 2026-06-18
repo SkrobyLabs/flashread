@@ -1,31 +1,162 @@
 <!doctype html>
-<html>
+<html data-theme="dark">
   <head>
     <meta charset="utf-8" />
-    <title>FlashRead Options</title>
+    <title>FlashRead Settings</title>
     <style>
-      body { font-family: -apple-system, Segoe UI, Roboto, sans-serif; max-width: 420px; margin: 40px auto; color: #15171c; }
-      h1 { font-size: 20px; }
-      .row { display: flex; align-items: center; gap: 12px; margin: 18px 0; }
-      input[type="range"] { flex: 1; }
-      .val { min-width: 84px; font-variant-numeric: tabular-nums; }
-      .hint { color: #6b7280; font-size: 13px; line-height: 1.5; }
-      code { background: #f0f1f4; padding: 1px 5px; border-radius: 4px; }
+      :root {
+        --bg: #0f1116;
+        --panel: #15171c;
+        --fg: #e7e9ee;
+        --muted: #9aa1ad;
+        --border: #2a2e37;
+        --input: #1d2027;
+        --accent: #e74c3c;
+      }
+      [data-theme="light"] {
+        --bg: #f4f5f8;
+        --panel: #ffffff;
+        --fg: #15171c;
+        --muted: #5b6473;
+        --border: #e3e5ea;
+        --input: #f0f1f4;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-size: 14px;
+      }
+      .wrap {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 32px 24px 48px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+      }
+      @media (max-width: 720px) { .wrap { grid-template-columns: 1fr; } }
+      h1 {
+        grid-column: 1 / -1;
+        margin: 0 0 4px;
+        font-size: 22px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 22px;
+      }
+      h2 { margin: 0 0 18px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); }
+      .field { margin-bottom: 22px; }
+      .field:last-child { margin-bottom: 0; }
+      label.cap { display: block; margin-bottom: 8px; font-weight: 600; }
+      .val { color: var(--muted); font-weight: 400; font-variant-numeric: tabular-nums; }
+
+      /* Segmented control */
+      .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 9px; overflow: hidden; }
+      .seg button {
+        all: unset;
+        cursor: pointer;
+        padding: 8px 18px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .seg button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+
+      input[type="range"] { width: 100%; accent-color: var(--accent); }
+      .colorRow { display: flex; align-items: center; gap: 12px; }
+      input[type="color"] {
+        width: 44px; height: 32px; padding: 0; border: 1px solid var(--border);
+        border-radius: 8px; background: none; cursor: pointer;
+      }
+      .swatches { display: flex; gap: 8px; }
+      .swatch { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
+      .swatch[aria-pressed="true"] { border-color: var(--fg); }
+
+      textarea {
+        width: 100%;
+        min-height: 88px;
+        resize: vertical;
+        background: var(--input);
+        color: var(--fg);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 10px 12px;
+        font: inherit;
+        line-height: 1.5;
+      }
+      .previewHead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+      .btn {
+        all: unset; cursor: pointer; padding: 7px 14px; border-radius: 8px;
+        background: var(--accent); color: #fff; font-size: 13px;
+      }
+      #preview { margin-top: 14px; }
+      .hint { grid-column: 1 / -1; color: var(--muted); font-size: 12px; line-height: 1.6; margin-top: -8px; }
+      code { background: var(--input); padding: 1px 6px; border-radius: 5px; }
     </style>
   </head>
   <body>
-    <h1>⚡ FlashRead</h1>
-    <div class="row">
-      <label for="wpm">Default speed</label>
-      <input type="range" id="wpm" min="100" max="1000" step="25" />
-      <span class="val" id="wpmVal"></span>
+    <div class="wrap">
+      <h1>⚡ FlashRead Settings</h1>
+
+      <div class="panel">
+        <h2>Appearance</h2>
+
+        <div class="field">
+          <label class="cap">Theme</label>
+          <div class="seg" id="theme">
+            <button data-theme-val="dark">Dark</button>
+            <button data-theme-val="light">Light</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="cap" for="color">Focus-point color</label>
+          <div class="colorRow">
+            <input type="color" id="color" />
+            <span class="val" id="colorHex"></span>
+            <div class="swatches" id="swatches"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Reading</h2>
+
+        <div class="field">
+          <label class="cap" for="wpm">Default speed <span class="val" id="wpmVal"></span></label>
+          <input type="range" id="wpm" min="100" max="1000" step="25" />
+        </div>
+
+        <div class="field">
+          <label class="cap" for="skip">Back / forward jump <span class="val" id="skipVal"></span></label>
+          <input type="range" id="skip" min="1" max="50" step="1" />
+        </div>
+      </div>
+
+      <div class="panel" style="grid-column: 1 / -1;">
+        <div class="previewHead">
+          <h2 style="margin: 0;">Live preview</h2>
+          <button class="btn" id="restart">↻ Restart</button>
+        </div>
+        <textarea id="text" spellcheck="false"></textarea>
+        <div id="preview"></div>
+      </div>
+
+      <p class="hint">
+        Settings are saved automatically and sync across your Chrome profile.
+        Change the launch shortcut at <code>chrome://extensions/shortcuts</code>.
+      </p>
     </div>
-    <p class="hint">
-      Select text on any page, then right-click → <em>Speed-read selection</em>,
-      click the floating ⚡ icon, or press the shortcut (default
-      <code>Ctrl/Cmd+Shift+Y</code>; change it at
-      <code>chrome://extensions/shortcuts</code>).
-    </p>
+
+    <script src="../player/player.js"></script>
     <script src="options.js"></script>
   </body>
 </html>
