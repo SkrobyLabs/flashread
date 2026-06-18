@@ -1,68 +1,120 @@
 # ⚡ FlashRead
 
-A Chrome extension (Manifest V3) that speed-reads **selected text on any page**
-using **RSVP** (Rapid Serial Visual Presentation) — words flash one at a time at
-a fixed point with the optimal-recognition-point letter highlighted in red, so
-your eyes stay still and you read faster.
+**Read faster, one word at a time.**
 
-## Features
+FlashRead is a free Chrome extension that helps you speed-read. Instead of moving
+your eyes across lines of text, it flashes the words one after another in the same
+spot — with one letter highlighted in color to keep your focus steady. This
+technique is called **RSVP** (Rapid Serial Visual Presentation), and with a little
+practice it can noticeably speed up your reading.
 
-- **Ways to launch:**
-  - Click the **toolbar icon** for a popup menu: *Speed-read selection*,
-    *Speed-read clipboard*, *Settings*
-  - Right-click selected text → **Speed-read selection**
-  - The floating **⚡ icon** that appears next to a selection
-  - Keyboard shortcut — default `Ctrl/Cmd+Shift+Y` (change at `chrome://extensions/shortcuts`)
-- **Overlay player** injected into the page in a Shadow DOM (style-isolated):
-  word stage with ORP red pivot letter, progress bar, **Back / Play-Pause /
-  Forward**, and a **WPM** stepper (100–1000). Opens **paused** on the first word;
-  when you press play it **eases in over ~2s** from half-speed up to your target
-  WPM. Back/forward jump **15 words** at a time.
-- **In-page highlight** of the current word using the CSS Custom Highlight API —
-  the page itself shows where you are, and the highlight stays put after you
-  close the overlay so you know where you stopped.
-- **Google Docs / canvas pages:** these draw text to a `<canvas>` with no DOM
-  selection, so FlashRead can't read it directly. Fallback: if no selectable text
-  is found it reads the **clipboard** — in Docs, select → copy (Ctrl/Cmd+C) →
-  trigger FlashRead. (No in-page highlight in this mode — there's no DOM range.)
-- Keyboard controls while open: `Space` play/pause, `←/→` jump (configurable), `↑/↓` speed, `Esc` close.
-- **Settings page** with a **live preview**: theme (dark/light), focus-point color
-  (picker + presets), default speed, jump distance, and editable test text. The
-  preview is the real player running embedded, so changes show instantly. All
-  settings save to `chrome.storage.sync` and the popup follows the chosen theme.
+It works on the text you select on (almost) any web page. No account, no ads,
+nothing is sent anywhere — it all runs on your computer.
 
-## Install (unpacked)
+---
 
-1. Open `chrome://extensions`
-2. Enable **Developer mode**
-3. **Load unpacked** → select this folder
+## How to use it
 
-## Project layout
+1. **Select** some text on a web page (click and drag over it).
+2. **Start FlashRead** in any of these ways:
+   - Click the **⚡ icon** that pops up next to your selection
+   - **Right-click** the selection → **Speed-read selection**
+   - Press the keyboard shortcut **Ctrl+Shift+Y** (on Mac: **Cmd+Shift+Y**)
+   - Click the **FlashRead toolbar button** (top-right of Chrome) for a menu
+3. A small reader box opens, paused on the first word. Press **Play** (or the
+   spacebar) and the words start flowing — easing up to your chosen speed over
+   the first couple of seconds.
+
+**While reading:** `Space` = play/pause, `←` / `→` = skip back/forward,
+`↑` / `↓` = slower/faster, `Esc` = close.
+
+Want to change the look or speed? Right-click the toolbar button → **Options**
+(or open the extension's **Settings**). There you can set light/dark theme, the
+highlight color, your default speed, and how far the skip buttons jump — with a
+live preview so you can try it out.
+
+> **Google Docs and PDFs:** these don't expose their text the normal way, so just
+> **copy** what you want to read (Ctrl/Cmd+C) and then start FlashRead — it will
+> read from your clipboard.
+
+---
+
+## How to install it (step by step)
+
+FlashRead isn't in the Chrome Web Store, so you install it manually from these
+files. It only takes a minute. You'll need [Google Chrome](https://www.google.com/chrome/)
+(or another Chromium browser like Edge or Brave).
+
+### Step 1 — Get the files onto your computer
+
+**If you have Git**, open a terminal and run:
+
+```bash
+git clone <repository-url>
+```
+
+This creates a `flashread` folder.
+
+**If you don't have Git** (totally fine): on the project's web page, click the
+green **Code** button → **Download ZIP**, then unzip it. Remember where you put
+the folder — Chrome will need it, and you shouldn't delete or move it afterwards.
+
+### Step 2 — Open Chrome's extensions page
+
+In Chrome, type this into the address bar and press Enter:
+
+```
+chrome://extensions
+```
+
+### Step 3 — Turn on Developer mode
+
+In the **top-right corner** of that page, flip the **Developer mode** switch
+**on**. A new row of buttons appears.
+
+### Step 4 — Load the extension
+
+Click **Load unpacked**, then select the **flashread** folder from Step 1
+(the folder that contains the `manifest.json` file).
+
+### Step 5 — You're done! 🎉
+
+FlashRead now appears in your list of extensions. Click the little **puzzle-piece
+icon** in Chrome's toolbar and **pin** ⚡ FlashRead so it's always visible.
+
+Go to any article, select some text, and give it a try.
+
+> **Keeping it updated:** if you used Git, run `git pull` in the folder, then click
+> the **refresh ↻** icon on FlashRead's card at `chrome://extensions`. If you
+> downloaded the ZIP, download the new one and re-do Step 4.
+
+---
+
+## For developers
+
+Plain Manifest V3, vanilla JS, no build step — the folder you load *is* the
+extension.
 
 ```
 manifest.json            MV3 manifest, permissions, shortcut, content-script registration
 src/background.js        service worker: context menu + command → message the tab
 src/popup/               toolbar popup menu (selection / clipboard / settings)
 src/content.js           selection capture, range→word tokenizer, floating icon, in-page highlight
-src/player/player.js     RSVP engine + Shadow-DOM overlay UI
+src/player/player.js     RSVP engine + Shadow-DOM overlay UI (themeable, embeddable)
 src/player/player.css    overlay styles (theme CSS variables; injected into the shadow root)
 src/options/             styled settings page + live embedded preview
 icons/                   generated app icons (regenerate with `python3 icons/mkicon.py`)
 ```
 
-## How it works
+**How it works:** the content script tokenizes the selection's **DOM Range** (not
+just its string) so each word keeps a reference to its text node + offsets. The
+player calls back with the current index; the content script rebuilds a `Range`
+for that word and registers it in `CSS.highlights` — highlighting the live page
+without mutating its DOM. Timing is per-word: base interval `60000 / wpm`,
+lengthened for sentence/clause punctuation and long words.
 
-The content script tokenizes the selection's **DOM Range** (not just its string)
-so each word keeps a reference to its text node + offsets. The player calls back
-with the current index; the content script rebuilds a `Range` for that word and
-registers it in `CSS.highlights` — highlighting the live page without mutating
-its DOM. Timing is per-word: base interval `60000 / wpm`, lengthened for
-sentence/clause punctuation and long words.
-
-## Permissions
-
-`activeTab`, `storage`, `contextMenus`, `clipboardRead` (clipboard reading),
-`scripting` (popup injects the content script into tabs opened before install).
-The content script matches `<all_urls>`
-because the floating selection icon needs to observe selections on every page;
-no remote hosts are contacted and nothing is sent off-device.
+**Permissions:** `activeTab`, `storage`, `contextMenus`, `clipboardRead`
+(clipboard reading), `scripting` (popup injects the content script into tabs
+opened before install). The content script matches `<all_urls>` because the
+floating selection icon needs to observe selections on every page. No remote
+hosts are contacted and nothing is sent off-device.
