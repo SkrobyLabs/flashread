@@ -55,13 +55,14 @@ files. It only takes a minute. You'll need [Google Chrome](https://www.google.co
 **If you have Git**, open a terminal and run:
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/SkrobyLabs/flashread.git
 ```
 
 This creates a `flashread` folder.
 
-**If you don't have Git** (totally fine): on the project's web page, click the
-green **Code** button → **Download ZIP**, then unzip it. Remember where you put
+**If you don't have Git** (totally fine): on the project's web page
+([github.com/SkrobyLabs/flashread](https://github.com/SkrobyLabs/flashread)), click
+the green **Code** button → **Download ZIP**, then unzip it. Remember where you put
 the folder — Chrome will need it, and you shouldn't delete or move it afterwards.
 
 ### Step 2 — Open Chrome's extensions page
