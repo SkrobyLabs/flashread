@@ -33,9 +33,14 @@ Want to change the look or speed? Right-click the toolbar button → **Options**
 highlight color, your default speed, and how far the skip buttons jump — with a
 live preview so you can try it out.
 
-> **Google Docs and PDFs:** these don't expose their text the normal way, so just
-> **copy** what you want to read (Ctrl/Cmd+C) and then start FlashRead — it will
-> read from your clipboard.
+> **If a page won't cooperate:** some pages — like **Google Docs**, **PDFs**, and
+> certain apps — don't let the extension reach into them to grab your selection,
+> so the ⚡ icon, right-click, and shortcut may do nothing there. Easy workaround:
+>
+> 1. **Select** the text and **copy** it (Ctrl+C, or Cmd+C on Mac).
+> 2. Click the **FlashRead toolbar button** and choose **Speed-read clipboard**.
+>
+> FlashRead reads whatever you just copied, so it works even on those pages.
 
 ---
 
